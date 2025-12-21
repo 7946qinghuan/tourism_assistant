@@ -1,0 +1,104 @@
+[project]
+name = "tourism-assistant"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "camel-ai>=0.2.80",
+    "fastapi>=0.125.0",
+    "jinja2>=3.1.6",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.1",
+]
+
+# --- 工具配置 ---
+
+# 1. Ruff 配置 (替代 Black, Isort, Flake8)
+[tool.ruff]
+# 排除常见的不需要检查的目录
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+# 设置行宽为 120 (比默认的 88 更适合现代开发)
+line-length = 120
+indent-width = 4
+
+# 目标 Python 版本
+target-version = "py310"
+
+[tool.ruff.lint]
+# 启用哪些检查规则？
+# E: pycodestyle errors
+# W: pycodestyle warnings
+# S: flake8-string-format (字符串格式化检查)
+# F: Pyflakes (核心逻辑检查)
+# I: isort (导入排序)
+# B: flake8-bugbear (发现潜在 Bug，强烈推荐)
+# C4: flake8-comprehensions (列表推导式优化)
+# UP: pyupgrade (自动升级旧语法，如 Optional[int] -> int | None)
+# N: pep8-naming (命名规范)
+# PIE: flake8-pie (PEP 8 改进建议)
+# PGH: flake8-pygithub (PyGitHub 相关检查)
+# PYI: flake8-pyi (PEP 484 类型注释检查)
+# SIM: flake8-simplify (代码简化建议)
+# ASYNC: flake8-async (异步代码检查，对 AI 项目很重要)
+select = ["E", "W", "S", "F", "I", "B", "C4", "UP", "N", "PIE", "PGH", "PYI", "SIM", "ASYNC"]
+
+# 忽略哪些规则？
+ignore = [
+    "E501",  # 忽略行过长错误 (由 ruff format 处理，不需要 lint 报错)
+    "S101",  # assert-used 忽略 assert 语句使用检查 (测试代码中常用)
+]
+
+# 允许自动修复的规则
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# 2. Pytest 配置
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --durations=5" # 显示简单的测试摘要，列出最慢的5个测试
+testpaths = [
+    "tests",
+]
+python_files = ["test_*.py", "*_test.py"]
+
+# 3. Mypy 配置 (静态类型检查)
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true # 强制函数必须有类型注解 (严格模式)
+ignore_missing_imports = true # 忽略第三方库缺失类型文件导致的报错
+check_untyped_defs = true
