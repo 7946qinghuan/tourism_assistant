@@ -28,6 +28,12 @@ class WeatherLives(BaseModel):
     humidity_float: float = Field(description="湿度（浮点型）")
 
     def __str__(self):
+        """
+        Format the WeatherLives instance as a human-readable multi-line summary of real-time weather.
+        
+        Returns:
+            str: A multi-line string containing province and city, administrative code, report time, current weather description, temperature in °C, wind direction, wind power (scale), and humidity percentage.
+        """
         return (
             f"=========================================\n"
             f"🌡️ {self.province}省{self.city} 实时天气\n"
@@ -60,6 +66,12 @@ class Casts(BaseModel):
 
     def __str__(self):
         # 星期数字转中文（1→一，2→二...）
+        """
+        Return a formatted, human-readable string summarizing the day's forecast, including date, weekday (in Chinese), and daytime and nighttime weather details.
+        
+        Returns:
+            str: Formatted string with date, weekday, daytime and nighttime conditions, temperatures in °C, wind directions, and wind power.
+        """
         week_map = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "日"}
         return (
             f"📅 日期：{self.date}（周{week_map.get(self.week, self.week)}）\n"
@@ -79,6 +91,14 @@ class WeatherForecast(BaseModel):
 
     def __str__(self):
         # 拼接所有单天预报的字符串
+        """
+        Return a formatted multi-line string summarizing the 4-day weather forecast for the model's city.
+        
+        The string includes a header with province, city, administrative code, report time, and the concatenated string representations of each day's forecast.
+        
+        Returns:
+            str: Formatted human-readable weather forecast.
+        """
         casts_str = "\n".join(str(cast) for cast in self.casts)
         return (
             f"=========================================\n"
@@ -129,10 +149,23 @@ class WeatherQueryToolkit(BaseToolkit):
         self.client = httpx.Client(timeout=self.timeout)
 
     async def close(self):
-        """关闭 httpx.AsyncClient 客户端"""
+        """
+        Close the toolkit's internal httpx client and release associated resources.
+        """
         self.client.close()
 
     def _build_weather_api_request_params(self, city: str, extensions: str, output: str) -> dict:
+        """
+        Build the query parameter dictionary for a Gaode Weather API request.
+        
+        Parameters:
+            city (str): City name or adcode accepted by the API.
+            extensions (str): Response type selector; typically "base" for realtime data or "all" for forecasts.
+            output (str): Desired response format, e.g., "JSON".
+        
+        Returns:
+            params (dict): Mapping of API query parameter names ("key", "city", "extensions", "output") to their values.
+        """
         params = {
             "key": self.api_key,
             "city": city,
@@ -144,6 +177,20 @@ class WeatherQueryToolkit(BaseToolkit):
     def _parse_weather_response(
         self, response_json: dict, forecasts: bool
     ) -> WeatherLives | WeatherForecast:  # 修改返回类型：支持两种模型
+        """
+        Parse a Gaode (Amap) Weather API JSON response into the appropriate Pydantic model.
+        
+        Parameters:
+            response_json (dict): Raw JSON response returned by the Gaode Weather API.
+            forecasts (bool): If True, parse and return forecast data; if False, parse and return real-time data.
+        
+        Returns:
+            WeatherForecast or WeatherLives: A WeatherForecast instance when `forecasts` is True; otherwise a WeatherLives instance.
+        
+        Raises:
+            ValueError: If the API response status is not "1" or the expected 'forecasts'/'lives' list is missing or empty.
+            RuntimeError: If Pydantic validation of the selected data fails; the error message includes validation details and the raw data.
+        """
         status = response_json.get("status")
         info = response_json.get("info", "无错误信息")
         if status != "1":
@@ -178,28 +225,20 @@ class WeatherQueryToolkit(BaseToolkit):
     def fetch_weather_from_api(
         self, city: str, extensions: str = "base", output: str = "JSON"
     ) -> WeatherLives | WeatherForecast:
-        r"""
-            Fetches weather data from the Gaode Weather API for the specified city.
-
+        """
+        Fetch weather data for a city from the Gaode (Amap) Weather API.
+        
         Args:
-            city (str): The name of the city to fetch weather data for.例如："成都"
-            extensions (str, optional): The type of weather data to fetch.
-                Defaults to "base".
-                Value Explanation:
-                - "base": Obtain real-time weather information. This is applicable when users inquire about "the current weather" or "the present weather" and other immediate weather conditions.
-                - "all": Obtain the weather forecast for the next 4 days (including today), applicable to user inquiries such as "recent weather", "weather in the coming days", "weather forecast", etc.
-            output (str, optional): The format of the API response. Defaults to "JSON".
-                Options are: "JSON", "XML".
-
+            city (str): City name, e.g., "成都".
+            extensions (str, optional): "base" for real-time weather, "all" for a 4-day forecast. Defaults to "base".
+            output (str, optional): Response format, "JSON" or "XML". Defaults to "JSON".
+        
         Returns:
-            Union[WeatherLives, WeatherForecast]: The parsed weather data, either
-                a WeatherLives object for real-time data or a WeatherForecast object
-                for forecast data.
-
+            WeatherLives or WeatherForecast: `WeatherLives` when `extensions == "base"`, `WeatherForecast` when `extensions == "all"`.
+        
         Raises:
-            ValueError: If the API response status is not "1" (success).
-            RuntimeError: If there are issues with the HTTP request, JSON parsing,
-                or data validation.
+            ValueError: If the API response indicates failure (status != "1") or expected data is missing.
+            RuntimeError: For network/HTTP errors, JSON parsing errors, or data validation failures.
         """
         params = self._build_weather_api_request_params(city, extensions, output)
         forecasts = bool(extensions == "all")
@@ -217,16 +256,14 @@ class WeatherQueryToolkit(BaseToolkit):
             raise RuntimeError(f"解析 API 响应 JSON 失败：{e}") from e
 
     def get_realtime_weather(self, city: str) -> WeatherLives:
-        r"""
-        Gets the real-time (current) weather for a specific city.
-        Use this function when the user asks for the weather "now", "currently",
-        "today", or any other immediate weather condition.
-
-        Args:
-            city (str): **It must be the standard Chinese name**. For example: "北京" or "成都".**English (such as "Beijing") or pinyin (such as "Chengdu") is invalid**.
-
+        """
+        Retrieve the current (real-time) weather for the specified city.
+        
+        Parameters:
+            city (str): The city's standard Chinese name (e.g., "北京", "成都"); English names or pinyin are not accepted.
+        
         Returns:
-            WeatherLives: An object containing the live weather details.
+            WeatherLives: A WeatherLives instance containing the live weather details for the specified city.
         """
         weather_data = self.fetch_weather_from_api(city, extensions="base")
         if not isinstance(weather_data, WeatherLives):
@@ -234,16 +271,14 @@ class WeatherQueryToolkit(BaseToolkit):
         return weather_data
 
     def get_weather_forecast(self, city: str) -> WeatherForecast:
-        r"""
-        Gets the 4-day weather forecast (including today) for a specific city.
-        Use this function when the user asks for the weather "in the future",
-        "in the next few days", "forecast", or "later".
-
-        Args:
-            city (str): **It must be the standard Chinese name**. For example: "上海" or "成都".**English (such as "Shanghai") or pinyin (such as "Chengdu") is invalid**.
-
+        """
+        Retrieve the 4-day weather forecast (including today) for a specified city.
+        
+        Parameters:
+            city (str): The city's standard Chinese name (e.g., "上海", "成都"); English names or pinyin (e.g., "Shanghai", "Chengdu") are not accepted.
+        
         Returns:
-            WeatherForecast: An object containing the 4-day weather forecast.
+            WeatherForecast: The 4-day weather forecast data.
         """
         weather_data = self.fetch_weather_from_api(city, extensions="all")
         if not isinstance(weather_data, WeatherForecast):
@@ -251,12 +286,11 @@ class WeatherQueryToolkit(BaseToolkit):
         return weather_data
 
     def get_tools(self) -> list[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
+        """
+        Provide FunctionTool wrappers for the toolkit's public functions.
+        
         Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
+            list[FunctionTool]: List containing FunctionTool wrappers for `self.get_realtime_weather` and `self.get_weather_forecast`.
         """
         return [
             FunctionTool(self.get_realtime_weather),
