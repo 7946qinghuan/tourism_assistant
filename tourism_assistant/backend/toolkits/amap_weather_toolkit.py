@@ -19,10 +19,10 @@ class WeatherLives(BaseModel):
     city: str = Field(description="城市名")
     adcode: str = Field(description="行政区划代码")
     weather: str = Field(description="天气状况")
-    temperature: int = Field(description="温度（整数）")
+    temperature: float = Field(description="温度（浮点型）")
     winddirection: str = Field(description="风向")
     windpower: str = Field(description="风力")
-    humidity: int = Field(description="湿度（整数）")
+    humidity: float = Field(description="湿度（浮点型）")
     reporttime: str = Field(description="数据发布时间")
     temperature_float: float = Field(description="温度（浮点型）")
     humidity_float: float = Field(description="湿度（浮点型）")
@@ -45,6 +45,8 @@ class WeatherLives(BaseModel):
 class Casts(BaseModel):
     """单天预报模型（对应 forecasts=True 时的 casts 子字段）"""
 
+    _WEEK_MAP = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "日"}
+
     date: str = Field(description="预报日期（格式：YYYY-MM-DD）")
     week: int = Field(description="星期（1=周一，7=周日）")  # API 返回字符串，Pydantic 自动转 int
     dayweather: str = Field(description="白天天气")
@@ -59,10 +61,8 @@ class Casts(BaseModel):
     nighttemp_float: float = Field(description="夜间温度（浮点型）")
 
     def __str__(self):
-        # 星期数字转中文（1→一，2→二...）
-        week_map = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "日"}
         return (
-            f"📅 日期：{self.date}（周{week_map.get(self.week, self.week)}）\n"
+            f"📅 日期：{self.date}（周{self._WEEK_MAP.get(self.week, self.week)}）\n"
             f"  🌞 白天：{self.dayweather} | 温度：{self.daytemp}°C | 风向：{self.daywind} | 风力：{self.daypower}\n"
             f"  🌙 夜间：{self.nightweather} | 温度：{self.nighttemp}°C | 风向：{self.nightwind} | 风力：{self.nightpower}\n"
         )
@@ -126,11 +126,11 @@ class WeatherQueryToolkit(BaseToolkit):
                 "4. 进入【应用管理】，在我的应用中选择需要创建 Key 的应用，点击【添加 Key】，表单中的服务平台选择【Web 服务】。\n"
                 "5. 创建成功后，可获取 Key 和安全密钥。"
             )
-        self.client = httpx.Client(timeout=self.timeout)
+        self.client = httpx.AsyncClient(timeout=self.timeout)
 
     async def close(self):
         """关闭 httpx.AsyncClient 客户端"""
-        self.client.close()
+        await self.client.aclose()
 
     def _build_weather_api_request_params(self, city: str, extensions: str, output: str) -> dict:
         params = {
@@ -155,31 +155,30 @@ class WeatherQueryToolkit(BaseToolkit):
                 forecasts_data_list = response_json.get("forecasts")
                 if not isinstance(forecasts_data_list, list) or not forecasts_data_list:
                     raise ValueError(f"API 未返回有效的 'forecasts' 列表，原始响应：{response_json}")
-                forecasts_data = forecasts_data_list[0]  # 取第一个预报（通常一个城市对应一条）
-                return WeatherForecast.model_validate(forecasts_data)  # 解析为预报模型
+                raw_data = forecasts_data_list[0]  # 取第一个预报（通常一个城市对应一条）
+                return WeatherForecast.model_validate(raw_data)  # 解析为预报模型
 
             else:
                 # 分支2：处理实时数据（forecasts=False，保持原有逻辑并完善）
                 lives_data_list = response_json.get("lives")
                 if not isinstance(lives_data_list, list) or not lives_data_list:
                     raise ValueError(f"API 未返回有效的 'lives' 列表，原始响应：{response_json}")
-                lives_data = lives_data_list[0]
-                return WeatherLives.model_validate(lives_data)  # 解析为实时天气模型
+                raw_data = lives_data_list[0]
+                return WeatherLives.model_validate(raw_data)  # 解析为实时天气模型
 
         except ValidationError as e:
             # 优化错误信息：明确是哪种数据解析失败
             data_type = "预报" if forecasts else "实时"
-            raw_data = forecasts_data if forecasts else lives_data
             error_details = e.errors()
             raise RuntimeError(
                 f"{data_type}天气数据解析失败：字段校验不通过。\n错误详情：{error_details}\n原始数据：{raw_data}"
             ) from e  # 保留原始异常栈，便于调试
 
-    def fetch_weather_from_api(
+    async def fetch_weather_from_api(
         self, city: str, extensions: str = "base", output: str = "JSON"
     ) -> WeatherLives | WeatherForecast:
         r"""
-            Fetches weather data from the Gaode Weather API for the specified city.
+            Asynchronously fetches weather data from the Gaode Weather API for the specified city.
 
         Args:
             city (str): The name of the city to fetch weather data for.例如："成都"
@@ -204,7 +203,7 @@ class WeatherQueryToolkit(BaseToolkit):
         params = self._build_weather_api_request_params(city, extensions, output)
         forecasts = bool(extensions == "all")
         try:
-            response = self.client.get(cast(str, self.base_url), params=params)
+            response = await self.client.get(cast(str, self.base_url), params=params)
             response.raise_for_status()
             response_json = response.json()
             return self._parse_weather_response(response_json, forecasts)
@@ -216,9 +215,9 @@ class WeatherQueryToolkit(BaseToolkit):
         except json.JSONDecodeError as e:
             raise RuntimeError(f"解析 API 响应 JSON 失败：{e}") from e
 
-    def get_realtime_weather(self, city: str) -> WeatherLives:
+    async def get_realtime_weather(self, city: str) -> WeatherLives:
         r"""
-        Gets the real-time (current) weather for a specific city.
+        Asynchronously gets the real-time (current) weather for a specific city.
         Use this function when the user asks for the weather "now", "currently",
         "today", or any other immediate weather condition.
 
@@ -228,14 +227,14 @@ class WeatherQueryToolkit(BaseToolkit):
         Returns:
             WeatherLives: An object containing the live weather details.
         """
-        weather_data = self.fetch_weather_from_api(city, extensions="base")
+        weather_data = await self.fetch_weather_from_api(city, extensions="base")
         if not isinstance(weather_data, WeatherLives):
             raise TypeError(f"API Error: Expected WeatherLives object for 'base' extension, got {type(weather_data)}")
         return weather_data
 
-    def get_weather_forecast(self, city: str) -> WeatherForecast:
+    async def get_weather_forecast(self, city: str) -> WeatherForecast:
         r"""
-        Gets the 4-day weather forecast (including today) for a specific city.
+        Asynchronously gets the 4-day weather forecast (including today) for a specific city.
         Use this function when the user asks for the weather "in the future",
         "in the next few days", "forecast", or "later".
 
@@ -245,7 +244,7 @@ class WeatherQueryToolkit(BaseToolkit):
         Returns:
             WeatherForecast: An object containing the 4-day weather forecast.
         """
-        weather_data = self.fetch_weather_from_api(city, extensions="all")
+        weather_data = await self.fetch_weather_from_api(city, extensions="all")
         if not isinstance(weather_data, WeatherForecast):
             raise TypeError(f"API Error: Expected WeatherForecast object for 'all' extension, got {type(weather_data)}")
         return weather_data
