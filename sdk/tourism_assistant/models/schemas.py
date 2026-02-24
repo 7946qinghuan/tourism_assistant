@@ -9,13 +9,21 @@ class TripRequest(BaseModel):
     """旅行规划请求"""
 
     city: str = Field(..., description="目的地城市", examples=["北京"])
-    start_date: str = Field(..., description="开始日期 YYYY-MM-DD", examples=["2025-06-01"])
-    end_date: str = Field(..., description="结束日期 YYYY-MM-DD", examples=["2025-06-03"])
+    start_date: str = Field(
+        ..., description="开始日期 YYYY-MM-DD", examples=["2025-06-01"]
+    )
+    end_date: str = Field(
+        ..., description="结束日期 YYYY-MM-DD", examples=["2025-06-03"]
+    )
     travel_days: int = Field(..., description="旅行天数", ge=1, le=30, examples=[3])
     transportation: str = Field(..., description="交通方式", examples=["公共交通"])
     accommodation: str = Field(..., description="住宿偏好", examples=["经济型酒店"])
-    preferences: list[str] = Field(default=[], description="旅行偏好标签", examples=["历史文化", "美食"])
-    free_text_input: str | None = Field(default="", description="额外要求", examples=["希望多安排一些博物馆"])
+    preferences: list[str] = Field(
+        default=[], description="旅行偏好标签", examples=["历史文化", "美食"]
+    )
+    free_text_input: str | None = Field(
+        default="", description="额外要求", examples=["希望多安排一些博物馆"]
+    )
 
     class Config:
         json_schema_extra = {
@@ -43,11 +51,17 @@ class POISearchRequest(BaseModel):
 class RouteRequest(BaseModel):
     """路线规划请求"""
 
-    origin_address: str = Field(..., description="起点地址", examples=["北京市朝阳区阜通东大街6号"])
-    destination_address: str = Field(..., description="终点地址", examples=["北京市海淀区上地十街10号"])
+    origin_address: str = Field(
+        ..., description="起点地址", examples=["北京市朝阳区阜通东大街6号"]
+    )
+    destination_address: str = Field(
+        ..., description="终点地址", examples=["北京市海淀区上地十街10号"]
+    )
     origin_city: str | None = Field(default=None, description="起点城市")
     destination_city: str | None = Field(default=None, description="终点城市")
-    route_type: str = Field(default="walking", description="路线类型: walking/driving/transit")
+    route_type: str = Field(
+        default="walking", description="路线类型: walking/driving/transit"
+    )
 
 
 # ============ 响应模型 ============
@@ -70,7 +84,9 @@ class Attraction(BaseModel):
     description: str = Field(..., description="景点描述")
     category: str | None = Field(default="景点", description="景点类别")
     rating: float | None = Field(default=None, description="评分")
-    photos: list[str] | None = Field(default_factory=list, description="景点图片URL列表")
+    photos: list[str] | None = Field(
+        default_factory=list, description="景点图片URL列表"
+    )
     poi_id: str | None = Field(default="", description="POI ID")
     image_url: str | None = Field(default=None, description="图片URL")
     ticket_price: int = Field(default=0, description="门票价格(元)")

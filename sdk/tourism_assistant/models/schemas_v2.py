@@ -7,13 +7,21 @@ class TripRequest(BaseModel):
     """旅行规划请求"""
 
     city: str = Field(..., description="目的地城市", examples=["北京"])
-    start_date: str = Field(..., description="开始日期 YYYY-MM-DD", examples=["2025-06-01"])
-    end_date: str = Field(..., description="结束日期 YYYY-MM-DD", examples=["2025-06-03"])
+    start_date: str = Field(
+        ..., description="开始日期 YYYY-MM-DD", examples=["2025-06-01"]
+    )
+    end_date: str = Field(
+        ..., description="结束日期 YYYY-MM-DD", examples=["2025-06-03"]
+    )
     travel_days: int = Field(..., description="旅行天数", ge=1, le=30, examples=[3])
     transportation: str = Field(..., description="交通方式", examples=["公共交通"])
     accommodation: str = Field(..., description="住宿偏好", examples=["经济型酒店"])
-    preferences: list[str] = Field(default=[], description="旅行偏好标签", examples=["历史文化", "美食"])
-    free_text_input: str | None = Field(default="", description="额外要求", examples=["希望多安排一些博物馆"])
+    preferences: list[str] = Field(
+        default=[], description="旅行偏好标签", examples=["历史文化", "美食"]
+    )
+    free_text_input: str | None = Field(
+        default="", description="额外要求", examples=["希望多安排一些博物馆"]
+    )
 
     class Config:
         json_schema_extra = {
