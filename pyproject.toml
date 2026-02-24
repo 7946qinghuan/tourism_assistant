@@ -44,13 +44,6 @@ exclude = [
     "venv",
 ]
 
-# 设置行宽为 120 (比默认的 88 更适合现代开发)
-line-length = 120
-indent-width = 4
-
-# 目标 Python 版本
-target-version = "py310"
-
 [tool.ruff.lint]
 # 启用哪些检查规则？
 # E: pycodestyle errors
@@ -74,6 +67,11 @@ ignore = [
     "E501",  # 忽略行过长错误 (由 ruff format 处理，不需要 lint 报错)
     "S101",  # assert-used 忽略 assert 语句使用检查 (测试代码中常用)
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/*" = ["E402"]
+"poc/*" = ["E402"]
+"tests/*" = ["E402"]
 
 # 允许自动修复的规则
 fixable = ["ALL"]

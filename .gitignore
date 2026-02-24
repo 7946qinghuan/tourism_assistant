@@ -175,7 +175,7 @@ cython_debug/
 .pypirc
 
 # Custom ignores
-config.yaml
 .vscode/
 poc/
 .github/
+mcp_tool_json/
