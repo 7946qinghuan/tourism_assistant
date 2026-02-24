@@ -3,7 +3,6 @@ import os
 
 from camel.responses import ChatAgentResponse
 from dotenv import load_dotenv
-
 from tourism_assistant.agent import LRUAgentManager, ModelProvider, TTLAgentManager
 
 load_dotenv(override=True, verbose=True)

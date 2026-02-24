@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import AsyncGenerator, Callable, Generator
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from functools import wraps
 
 from camel.agents import ChatAgent
@@ -45,7 +45,9 @@ class BaseAgentManager(ABC):
         return ChatAgent(model=self.model, system_message=system_message, **kwargs)
 
     @abstractmethod
-    def register_agent(self, agent_id: str, system_message: BaseMessage | str | None = None, **kwargs):
+    def register_agent(
+        self, agent_id: str, system_message: BaseMessage | str | None = None, **kwargs
+    ):
         pass
 
     @abstractmethod
@@ -66,7 +68,10 @@ class BaseAgentManager(ABC):
         yield from response
 
     def call_agent(
-        self, agent_id: str, message: str, response_format: type[BaseModel] | None = None
+        self,
+        agent_id: str,
+        message: str,
+        response_format: type[BaseModel] | None = None,
     ) -> ChatAgentResponse | Generator[ChatAgentResponse, None, None]:
         try:
             entry = self.get_agent_entry(agent_id)
@@ -79,12 +84,17 @@ class BaseAgentManager(ABC):
             raise RuntimeError(f"Agent[{agent_id}] call failed") from e
 
     async def acall_agent(
-        self, agent_id: str, message: str, response_format: type[BaseModel] | None = None
+        self,
+        agent_id: str,
+        message: str,
+        response_format: type[BaseModel] | None = None,
     ) -> ChatAgentResponse | AsyncGenerator[ChatAgentResponse, None]:
         try:
             entry = self.get_agent_entry(agent_id)
             with entry.instance_lock:
-                response = await entry.agent.astep(message, response_format=response_format)
+                response = await entry.agent.astep(
+                    message, response_format=response_format
+                )
                 if isinstance(response, AsyncStreamingChatAgentResponse):
                     return self._wrap_async_stream(response)
                 return response
@@ -100,18 +110,22 @@ class TTLAgentManager(BaseAgentManager):
         threading.Thread(target=self._cleanup_loop, daemon=True).start()
 
     @locked
-    def register_agent(self, agent_id: str, system_message: BaseMessage | str | None = None, **kwargs):
+    def register_agent(
+        self, agent_id: str, system_message: BaseMessage | str | None = None, **kwargs
+    ):
         if agent_id in self._container:
             raise ValueError(f"Agent {agent_id} already exists")
         agent = self._create_agent(system_message, **kwargs)
-        self._container[agent_id] = AgentEntry(agent=agent, last_accessed=datetime.now(timezone.utc))
+        self._container[agent_id] = AgentEntry(
+            agent=agent, last_accessed=datetime.now(UTC)
+        )
 
     @locked
     def get_agent_entry(self, agent_id: str) -> AgentEntry:
         if agent_id not in self._container:
             raise KeyError(f"Agent {agent_id} not found")
         entry = self._container[agent_id]
-        entry.last_accessed = datetime.now(timezone.utc)
+        entry.last_accessed = datetime.now(UTC)
         return entry
 
     @locked
@@ -119,10 +133,12 @@ class TTLAgentManager(BaseAgentManager):
         return self._container.pop(agent_id, None) is not None
 
     def _do_cleanup(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with self._lock:
             expired = [
-                k for k, v in self._container.items() if now - v.last_accessed > timedelta(seconds=self.ttl_seconds)
+                k
+                for k, v in self._container.items()
+                if now - v.last_accessed > timedelta(seconds=self.ttl_seconds)
             ]
             for k in expired:
                 del self._container[k]
@@ -140,7 +156,9 @@ class LRUAgentManager(BaseAgentManager):
         self.max_capacity = max_capacity
 
     @locked
-    def register_agent(self, agent_id: str, system_message: BaseMessage | str | None = None, **kwargs):
+    def register_agent(
+        self, agent_id: str, system_message: BaseMessage | str | None = None, **kwargs
+    ):
         if agent_id in self._container:
             self._container.move_to_end(agent_id)
             return
@@ -151,7 +169,9 @@ class LRUAgentManager(BaseAgentManager):
             # 这里可以根据需要添加日志：logger.info(f"LRU: Evicted agent {old_id}")
 
         agent = self._create_agent(system_message, **kwargs)
-        self._container[agent_id] = AgentEntry(agent=agent, last_accessed=datetime.now(timezone.utc))
+        self._container[agent_id] = AgentEntry(
+            agent=agent, last_accessed=datetime.now(UTC)
+        )
 
     @locked
     def get_agent_entry(self, agent_id: str) -> AgentEntry:
@@ -159,7 +179,7 @@ class LRUAgentManager(BaseAgentManager):
             raise KeyError(f"Agent {agent_id} not found")
 
         entry = self._container[agent_id]
-        entry.last_accessed = datetime.now(timezone.utc)
+        entry.last_accessed = datetime.now(UTC)
         self._container.move_to_end(agent_id)
 
         return entry
@@ -181,7 +201,9 @@ class ModelProvider:
     def __init__(self):
         self._factory = ModelFactory()
 
-    def create_model(self, model_name, url, api_key, model_config_dict=None, **kwargs) -> BaseModelBackend:
+    def create_model(
+        self, model_name, url, api_key, model_config_dict=None, **kwargs
+    ) -> BaseModelBackend:
         if model_config_dict is None:
             model_config_dict = {"temperature": 0.1, "stream": True}
 

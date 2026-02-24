@@ -4,7 +4,6 @@ import os
 from camel.responses import ChatAgentResponse
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-
 from tourism_assistant.agent import LRUAgentManager, ModelProvider
 from tourism_assistant.prompts import WEATHER_AGENT_PROMPT
 from tourism_assistant.toolkits import MCPManager
@@ -44,7 +43,9 @@ async def test_async_non_streaming_agent():
     try:
         mcp_tools = mcp_manager.get_tools()
         agent_id = "test_agent_04"
-        cache_agent_manager.register_agent(agent_id, system_message=WEATHER_AGENT_PROMPT, tools=mcp_tools)
+        cache_agent_manager.register_agent(
+            agent_id, system_message=WEATHER_AGENT_PROMPT, tools=mcp_tools
+        )
         user_message = "搜索成都的天气"
 
         print(f"User: {user_message}\n")
@@ -55,11 +56,11 @@ async def test_async_non_streaming_agent():
         )
         if isinstance(origin_res, ChatAgentResponse):
             print(origin_res.msgs[0].content)
-            format_message = (
-                f"请你根据以下天气信息,返回一个包含天气描述、温度和风力的列表: {origin_res.msgs[0].content}"
-            )
+            format_message = f"请你根据以下天气信息,返回一个包含天气描述、温度和风力的列表: {origin_res.msgs[0].content}"
             print("Format Response:\n")
-            res = await cache_agent_manager.acall_agent(agent_id, format_message, response_format=WeatherSearchResponse)
+            res = await cache_agent_manager.acall_agent(
+                agent_id, format_message, response_format=WeatherSearchResponse
+            )
             if isinstance(res, ChatAgentResponse):
                 print(res.msgs[0].content)
 

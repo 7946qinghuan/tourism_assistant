@@ -177,7 +177,9 @@ class OpenMeteoWeatherToolkit(BaseToolkit):
         final_end = min(max_end, req_end)
 
         if final_start > final_end:
-            raise ValueError(f"日期超出可查询范围（今天：{today}，最远可查：{max_end}）")
+            raise ValueError(
+                f"日期超出可查询范围（今天：{today}，最远可查：{max_end}）"
+            )
 
         # ── 步骤3：调用 Open-Meteo Forecast API ──
         params = {
@@ -236,7 +238,9 @@ class OpenMeteoWeatherToolkit(BaseToolkit):
                         apparent_min=d["apparent_temperature_min"][i],
                     ),
                     precipitation=Precipitation(
-                        probability_max=d.get("precipitation_probability_max", [None])[i],
+                        probability_max=d.get("precipitation_probability_max", [None])[
+                            i
+                        ],
                         hours=d["precipitation_hours"][i],
                         snowfall_sum=d["snowfall_sum"][i],
                         shortwave_radiation_sum=d["shortwave_radiation_sum"][i],

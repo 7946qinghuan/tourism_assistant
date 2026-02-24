@@ -48,7 +48,9 @@ class Casts(BaseModel):
     _WEEK_MAP = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "日"}
 
     date: str = Field(description="预报日期（格式：YYYY-MM-DD）")
-    week: int = Field(description="星期（1=周一，7=周日）")  # API 返回字符串，Pydantic 自动转 int
+    week: int = Field(
+        description="星期（1=周一，7=周日）"
+    )  # API 返回字符串，Pydantic 自动转 int
     dayweather: str = Field(description="白天天气")
     nightweather: str = Field(description="夜间天气")
     daytemp: int = Field(description="白天温度（整数）")  # API 返回字符串，自动转 int
@@ -132,7 +134,9 @@ class WeatherQueryToolkit(BaseToolkit):
         """关闭 httpx.AsyncClient 客户端"""
         await self.client.aclose()
 
-    def _build_weather_api_request_params(self, city: str, extensions: str, output: str) -> dict:
+    def _build_weather_api_request_params(
+        self, city: str, extensions: str, output: str
+    ) -> dict:
         params = {
             "key": self.api_key,
             "city": city,
@@ -147,22 +151,30 @@ class WeatherQueryToolkit(BaseToolkit):
         status = response_json.get("status")
         info = response_json.get("info", "无错误信息")
         if status != "1":
-            raise ValueError(f"高德天气 API 调用失败：状态码 {status}，错误信息：{info}")
+            raise ValueError(
+                f"高德天气 API 调用失败：状态码 {status}，错误信息：{info}"
+            )
 
         try:
             if forecasts:
                 # 分支1：处理预报数据（forecasts=True）
                 forecasts_data_list = response_json.get("forecasts")
                 if not isinstance(forecasts_data_list, list) or not forecasts_data_list:
-                    raise ValueError(f"API 未返回有效的 'forecasts' 列表，原始响应：{response_json}")
-                raw_data = forecasts_data_list[0]  # 取第一个预报（通常一个城市对应一条）
+                    raise ValueError(
+                        f"API 未返回有效的 'forecasts' 列表，原始响应：{response_json}"
+                    )
+                raw_data = forecasts_data_list[
+                    0
+                ]  # 取第一个预报（通常一个城市对应一条）
                 return WeatherForecast.model_validate(raw_data)  # 解析为预报模型
 
             else:
                 # 分支2：处理实时数据（forecasts=False，保持原有逻辑并完善）
                 lives_data_list = response_json.get("lives")
                 if not isinstance(lives_data_list, list) or not lives_data_list:
-                    raise ValueError(f"API 未返回有效的 'lives' 列表，原始响应：{response_json}")
+                    raise ValueError(
+                        f"API 未返回有效的 'lives' 列表，原始响应：{response_json}"
+                    )
                 raw_data = lives_data_list[0]
                 return WeatherLives.model_validate(raw_data)  # 解析为实时天气模型
 
@@ -209,7 +221,9 @@ class WeatherQueryToolkit(BaseToolkit):
             return self._parse_weather_response(response_json, forecasts)
 
         except httpx.HTTPStatusError as e:
-            raise RuntimeError(f"HTTP 请求失败：{e.response.status_code} - {e.response.text}") from e
+            raise RuntimeError(
+                f"HTTP 请求失败：{e.response.status_code} - {e.response.text}"
+            ) from e
         except httpx.RequestError as e:
             raise RuntimeError(f"网络请求出错：{e}") from e
         except json.JSONDecodeError as e:
@@ -229,7 +243,9 @@ class WeatherQueryToolkit(BaseToolkit):
         """
         weather_data = await self.fetch_weather_from_api(city, extensions="base")
         if not isinstance(weather_data, WeatherLives):
-            raise TypeError(f"API Error: Expected WeatherLives object for 'base' extension, got {type(weather_data)}")
+            raise TypeError(
+                f"API Error: Expected WeatherLives object for 'base' extension, got {type(weather_data)}"
+            )
         return weather_data
 
     async def get_weather_forecast(self, city: str) -> WeatherForecast:
@@ -246,7 +262,9 @@ class WeatherQueryToolkit(BaseToolkit):
         """
         weather_data = await self.fetch_weather_from_api(city, extensions="all")
         if not isinstance(weather_data, WeatherForecast):
-            raise TypeError(f"API Error: Expected WeatherForecast object for 'all' extension, got {type(weather_data)}")
+            raise TypeError(
+                f"API Error: Expected WeatherForecast object for 'all' extension, got {type(weather_data)}"
+            )
         return weather_data
 
     def get_tools(self) -> list[FunctionTool]:

@@ -4,7 +4,6 @@ import os
 from camel.responses import ChatAgentResponse
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-
 from tourism_assistant.agent import LRUAgentManager, ModelProvider
 from tourism_assistant.prompts import ATTRACTION_AGENT_PROMPT
 from tourism_assistant.toolkits import MCPManager
@@ -39,7 +38,9 @@ async def test_async_non_streaming_agent():
     try:
         mcp_tools = mcp_manager.get_tools()
         agent_id = "test_agent_04"
-        cache_agent_manager.register_agent(agent_id, system_message=ATTRACTION_AGENT_PROMPT, tools=mcp_tools)
+        cache_agent_manager.register_agent(
+            agent_id, system_message=ATTRACTION_AGENT_PROMPT, tools=mcp_tools
+        )
         user_message = "搜索成都的古镇"
 
         print(f"User: {user_message}\n")
@@ -67,7 +68,9 @@ async def test_async_streaming_agent():
     try:
         mcp_tools = mcp_manager.get_tools()
         agent_id = "test_agent_04"
-        cache_agent_manager.register_agent(agent_id, system_message=ATTRACTION_AGENT_PROMPT, tools=mcp_tools)
+        cache_agent_manager.register_agent(
+            agent_id, system_message=ATTRACTION_AGENT_PROMPT, tools=mcp_tools
+        )
         message = "搜索成都的古镇"
 
         print(f"User: {message}\n")
@@ -80,7 +83,9 @@ async def test_async_streaming_agent():
             async for chunk in res:
                 if chunk.msgs:
                     current_full_response = chunk.msgs[0].content
-                    current_chunk_content = current_full_response[len(last_full_response) :]
+                    current_chunk_content = current_full_response[
+                        len(last_full_response) :
+                    ]
                     last_full_response = current_full_response
                     print(current_chunk_content, end="", flush=True)
     finally:
