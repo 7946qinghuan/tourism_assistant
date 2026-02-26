@@ -88,7 +88,7 @@ class Attraction(BaseModel):
         default_factory=list, description="景点图片URL列表"
     )
     poi_id: str | None = Field(default="", description="POI ID")
-    image_url: str | None = Field(default=None, description="图片URL")
+    photo_url: str | None = Field(default=None, description="图片URL")
     ticket_price: int = Field(default=0, description="门票价格(元)")
 
 
@@ -114,6 +114,7 @@ class Hotel(BaseModel):
     distance: str = Field(default="", description="距离景点距离")
     type: str = Field(default="", description="酒店类型")
     estimated_cost: int = Field(default=0, description="预估费用(元/晚)")
+    photo_url: str | None = Field(default=None, description="图片URL")
 
 
 class DayPlan(BaseModel):
