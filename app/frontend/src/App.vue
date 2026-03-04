@@ -3,14 +3,14 @@
     <a-layout style="min-height: 100vh">
       <a-layout-header style="background: #001529; padding: 0 50px">
         <div style="color: white; font-size: 24px; font-weight: bold">
-          🌍 HelloAgents智能旅行助手
+          🌍 基于 CAMEL-AI 多智能体协作架构的旅游智能助手
         </div>
       </a-layout-header>
       <a-layout-content style="padding: 24px">
         <router-view />
       </a-layout-content>
       <a-layout-footer style="text-align: center">
-        HelloAgents智能旅行助手 ©2025 基于HelloAgents框架
+        基于 CAMEL-AI 多智能体协作架构的旅游智能助手 ©2026 基于 CAMEL-AI 框架
       </a-layout-footer>
     </a-layout>
   </div>
