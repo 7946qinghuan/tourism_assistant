@@ -13,7 +13,7 @@ export interface Attraction {
   description: string
   category?: string
   rating?: number
-  image_url?: string
+  photo_url?: string
   ticket_price?: number
 }
 
@@ -35,6 +35,7 @@ export interface Hotel {
   distance: string
   type: string
   estimated_cost?: number
+  photo_url?: string
 }
 
 export interface Budget {

@@ -186,7 +186,7 @@
                       <!-- 景点图片 -->
                       <div class="attraction-image-wrapper">
                         <img
-                          :src="getAttractionImage(item.name, index)"
+                          :src="item.photo_url"
                           :alt="item.name"
                           class="attraction-image"
                           @error="handleImageError"
@@ -226,6 +226,9 @@
               <!-- 酒店推荐 -->
               <a-divider v-if="day.hotel" orientation="left">🏨 住宿推荐</a-divider>
               <a-card v-if="day.hotel" size="small" class="hotel-card">
+                <template #cover v-if="day.hotel.photo_url">
+                  <img :src="day.hotel.photo_url" alt="酒店图片" class="hotel-image" />
+                </template>
                 <template #title>
                   <span class="hotel-title">{{ day.hotel.name }}</span>
                 </template>
@@ -322,7 +325,6 @@ const router = useRouter()
 const tripPlan = ref<TripPlan | null>(null)
 const editMode = ref(false)
 const originalPlan = ref<TripPlan | null>(null)
-const attractionPhotos = ref<Record<string, string>>({})
 const activeSection = ref('overview')
 const activeDays = ref<number[]>([0]) // 默认展开第一天
 let map: any = null
@@ -331,8 +333,6 @@ onMounted(async () => {
   const data = sessionStorage.getItem('tripPlan')
   if (data) {
     tripPlan.value = JSON.parse(data)
-    // 加载景点图片
-    await loadAttractionPhotos()
     // 等待DOM渲染完成后初始化地图
     await nextTick()
     initMap()
@@ -423,65 +423,6 @@ const getMealLabel = (type: string): string => {
     snack: '小吃'
   }
   return labels[type] || type
-}
-
-// 加载所有景点图片
-const loadAttractionPhotos = async () => {
-  if (!tripPlan.value) return
-
-  const promises: Promise<void>[] = []
-
-  tripPlan.value.days.forEach(day => {
-    day.attractions.forEach(attraction => {
-      const promise = fetch(`http://localhost:8000/api/v1/map/photo?name=${encodeURIComponent(attraction.name)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.data.photo_url) {
-            attractionPhotos.value[attraction.name] = data.data.photo_url
-          }
-        })
-        .catch(err => {
-          console.error(`获取${attraction.name}图片失败:`, err)
-        })
-
-      promises.push(promise)
-    })
-  })
-
-  await Promise.all(promises)
-}
-
-// 获取景点图片
-const getAttractionImage = (name: string, index: number): string => {
-  // 如果已加载真实图片,返回真实图片
-  if (attractionPhotos.value[name]) {
-    return attractionPhotos.value[name]
-  }
-
-  // 返回一个纯色占位图(避免跨域问题)
-  const colors = [
-    { start: '#667eea', end: '#764ba2' },
-    { start: '#f093fb', end: '#f5576c' },
-    { start: '#4facfe', end: '#00f2fe' },
-    { start: '#43e97b', end: '#38f9d7' },
-    { start: '#fa709a', end: '#fee140' }
-  ]
-  const colorIndex = index % colors.length
-  const { start, end } = colors[colorIndex]
-
-  // 使用base64编码避免中文问题
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">
-    <defs>
-      <linearGradient id="grad${index}" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:${start};stop-opacity:1" />
-        <stop offset="100%" style="stop-color:${end};stop-opacity:1" />
-      </linearGradient>
-    </defs>
-    <rect width="400" height="300" fill="url(#grad${index})"/>
-    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="24" font-weight="bold" fill="white">${name}</text>
-  </svg>`
-
-  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`
 }
 
 // 图片加载失败时的处理
@@ -1152,6 +1093,12 @@ const drawRoutes = (AMap: any, attractions: any[]) => {
 .hotel-card {
   background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   border: none !important;
+}
+
+.hotel-image {
+  height: 160px;
+  object-fit: cover;
+  width: 100%;
 }
 
 .hotel-card :deep(.ant-card-head) {
