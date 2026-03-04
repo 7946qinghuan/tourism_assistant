@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from camel.toolkits import FunctionTool, MCPToolkit
 from loguru import logger
@@ -52,8 +52,24 @@ class MCPManager:
         Note: Ensure connect() has been called and awaited before calling this method.
         """
         if not self._is_connected or self.toolkit is None:
-            logger.warning("MCPManager is not connected. Returning empty tool list. Please call await connect() first.")
+            logger.warning(
+                "MCPManager is not connected. Returning empty tool list. Please call await connect() first."
+            )
             return []
 
         logger.info(f"Retrieving {len(self.toolkit.get_tools())} MCP tools.")
         return self.toolkit.get_tools()
+
+    async def call_tool(self, tool_name: str, tool_args: dict[str, Any]) -> Any:
+        """
+        Call a specific MCP tool asynchronously.
+        Note: Ensure connect() has been called and awaited before calling this method.
+        """
+        if not self._is_connected or self.toolkit is None:
+            logger.warning(
+                "MCPManager is not connected. Cannot call tool. Please call await connect() first."
+            )
+            return {}
+
+        result = await self.toolkit.call_tool(tool_name, tool_args)
+        return result

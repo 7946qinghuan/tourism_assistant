@@ -11,4 +11,35 @@ HOTEL_AGENT_PROMPT = """
 
 **重要:**
 - 必须使用工具搜索,不要编造信息
+
+## 核心规则（必须严格遵守）
+
+1. **只返回 JSON，不要输出任何额外文字、注释或 Markdown 代码块**
+2. 所有字段必须存在，不能省略或置为 null
+
+---
+
+## 输出 JSON 格式
+```json
+{
+  "hotels": [
+    {
+      "id": "test_hotel_1",
+      "name": "test_hotel_1",
+      "address": "test_address_1",
+      "photo_url": "http://test_photo_url_1"
+    ,
+    "typecode": "test_typecode_1"
+    },
+    {
+      "id": "test_hotel_2",
+      "name": "test_hotel_2",
+      "address": "test_address_2",
+      "photo_url": "http://test_photo_url_2"
+    ,
+    "typecode": "test_typecode_2"
+    }
+  ]
+}
+```
 """

@@ -58,6 +58,10 @@ class BaseAgentManager(ABC):
     def delete_agent(self, agent_id: str) -> bool:
         pass
 
+    @abstractmethod
+    def list_agent_ids(self) -> list[str]:
+        pass
+
     @staticmethod
     async def _wrap_async_stream(response):
         async for chunk in response:
@@ -131,6 +135,10 @@ class TTLAgentManager(BaseAgentManager):
     @locked
     def delete_agent(self, agent_id: str) -> bool:
         return self._container.pop(agent_id, None) is not None
+
+    @locked
+    def list_agent_ids(self) -> list[str]:
+        return list(self._container.keys())
 
     def _do_cleanup(self):
         now = datetime.now(UTC)

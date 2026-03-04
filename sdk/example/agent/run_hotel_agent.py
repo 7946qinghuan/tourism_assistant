@@ -29,8 +29,8 @@ class HotelSearchdata(BaseModel):
     typecode: str = Field(description="酒店类型编码")
 
 
-class HotelSearchResponse(BaseModel):
-    hotels: list[HotelSearchdata] = Field(description="多个酒店搜索结果")
+class HotelResult(BaseModel):
+    hotels: list[HotelSearchdata] = Field(description="酒店搜索结果列表")
 
 
 async def test_async_non_streaming_agent():
@@ -54,7 +54,7 @@ async def test_async_non_streaming_agent():
             format_message = f"请你根据以下酒店信息,返回一个包含酒店名称、地址和照片URL的列表: {origin_res.msgs[0].content}"
             print("Format Response:\n")
             res = await cache_agent_manager.acall_agent(
-                agent_id, format_message, response_format=HotelSearchResponse
+                agent_id, format_message, response_format=HotelResult
             )
             if isinstance(res, ChatAgentResponse):
                 print(res.msgs[0].content)

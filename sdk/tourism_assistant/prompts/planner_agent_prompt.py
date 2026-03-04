@@ -28,72 +28,49 @@ PLANNER_AGENT_PROMPT = """
   "days": [
     {
       "date": "YYYY-MM-DD",
-      "day_index": 1,
-      "description": "当天行程概述，简要说明主题和亮点",
-      "transportation": "当天主要交通方式，如地铁、步行、打车",
-      "accommodation": "住宿类型，如经济型、精品酒店",
+      "day_index": 0,
+      "description": "第1天行程概述",
+      "transportation": "交通方式",
+      "accommodation": "住宿类型",
       "hotel": {
-        "name": "酒店名称（必须来自提供的酒店信息）",
-        "address": "酒店详细地址",
-        "location": {"longitude": 104.065735, "latitude": 30.659462},
-        "price_range": "300-500元/晚",
+        "name": "酒店名称",
+        "address": "酒店地址",
+        "location": {"longitude": 116.397128, "latitude": 39.916527},
+        "price_range": "300-500元",
         "rating": "4.5",
-        "distance": "距核心景点约2公里",
+        "distance": "距离景点2公里",
         "type": "经济型酒店",
-        "estimated_cost": 400
+        "estimated_cost": 400,
+        "photo_url": "酒店图片URL"
       },
       "attractions": [
         {
           "name": "景点名称",
-          "address": "景点详细地址",
-          "location": {"longitude": 104.065735, "latitude": 30.659462},
+          "address": "详细地址",
+          "location": {"longitude": 116.397128, "latitude": 39.916527},
           "visit_duration": 120,
-          "description": "景点特色与游览建议",
-          "category": "历史文化 / 自然风光 / 休闲娱乐 等",
+          "description": "景点详细描述",
+          "category": "景点类别",
+          "photo_url": "景点图片URL",
           "ticket_price": 60
         }
       ],
       "meals": [
-        {
-          "type": "breakfast",
-          "name": "早餐推荐名称或餐厅",
-          "description": "推荐理由或特色菜品",
-          "estimated_cost": 30
-        },
-        {
-          "type": "lunch",
-          "name": "午餐推荐名称或餐厅",
-          "description": "推荐理由或特色菜品",
-          "estimated_cost": 60
-        },
-        {
-          "type": "dinner",
-          "name": "晚餐推荐名称或餐厅",
-          "description": "推荐理由或特色菜品",
-          "estimated_cost": 100
-        }
+        {"type": "breakfast", "name": "早餐推荐", "description": "早餐描述", "estimated_cost": 30},
+        {"type": "lunch", "name": "午餐推荐", "description": "午餐描述", "estimated_cost": 50},
+        {"type": "dinner", "name": "晚餐推荐", "description": "晚餐描述", "estimated_cost": 80}
       ]
     }
   ],
   "weather_info": [
     {
-      "location": "城市名称",
-      "latitude": 30.659462,
-      "longitude": 104.065735,
-      "timezone": "Asia/Shanghai",
-      "start_date": "YYYY-MM-DD",
-      "end_date": "YYYY-MM-DD",
-      "daily_weather": [
-        {
-          "date": "YYYY-MM-DD",
-          "weather_desc": "晴",
-          "weather_code": 800,
-          "temperature": 25,
-          "night_temp": 15,
-          "wind_direction": "南风",
-          "wind_power": "1-3级"
-        }
-      ]
+      "date": "YYYY-MM-DD",
+      "day_weather": "晴",
+      "night_weather": "多云",
+      "day_temp": 25,
+      "night_temp": 15,
+      "wind_direction": "南风",
+      "wind_power": "1-3级"
     }
   ],
   "overall_suggestions": "结合天气、交通、饮食等维度给出的实用出行建议，100字以上",

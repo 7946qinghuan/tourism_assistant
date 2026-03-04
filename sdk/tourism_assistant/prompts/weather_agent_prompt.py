@@ -11,4 +11,54 @@ WEATHER_AGENT_PROMPT = """
 
 **重要:**
 - 必须使用工具搜索,不要编造信息
+
+## 核心规则（必须严格遵守）
+
+1. **只返回 JSON，不要输出任何额外文字、注释或 Markdown 代码块**
+2. 所有字段必须存在，不能省略或置为 null
+
+---
+
+## 输出 JSON 格式
+```json
+{
+    "location": "test_location",
+    "latitude": 39.9042,
+    "longitude": 116.4074,
+    "timezone": "Asia/Shanghai",
+    "start_date": "YYYY-MM-DD",
+    "end_date": "YYYY-MM-DD",
+    "daily": [
+        {
+            "date": "YYYY-MM-DD",
+            "weather_desc": "test_weather_description",
+            "weather_code": 800,
+            "temperature": {
+                "max": 25.0,
+                "min": 15.0,
+                "mean": 20.0,
+                "apparent_max": 28.0,
+                "apparent_min": 18.0
+            },
+            "precipitation": {
+                "probability_max": 50,
+                "hours": 5.0,
+                "snowfall_sum": 0.0,
+                "shortwave_radiation_sum": 2000.0
+            },
+            "sun_light": {
+                "sunrise": "HH:MM:SS",
+                "sunset": "HH:MM:SS",
+                "daylight_duration": 1200.0,
+                "uv_index_max": 8.0
+            },
+            "wind": {
+                "speed_max": 10.0,
+                "gusts_max": 15.0,
+                "direction_dominant": 200.0
+            }
+        }
+    ]
+}
+```
 """

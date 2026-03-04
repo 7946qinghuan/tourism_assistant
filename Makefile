@@ -8,8 +8,8 @@ help: ## Display this help message
 	@echo "Targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-run: ## Run the application
-	uv run tourism_assistant/backend/main.py
+run: ## Run the application in development mode with auto-reload
+	python run.py
 
 format: ## Format code with ruff
 	uvx ruff check --fix .
