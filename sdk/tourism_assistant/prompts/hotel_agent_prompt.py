@@ -27,9 +27,8 @@ HOTEL_AGENT_PROMPT = """
       "id": "test_hotel_1",
       "name": "test_hotel_1",
       "address": "test_address_1",
-      "photo_url": "http://test_photo_url_1"
-    ,
-    "typecode": "test_typecode_1"
+      "photo_url": "http://test_photo_url_1",
+      "typecode": "test_typecode_1"
     },
     {
       "id": "test_hotel_2",

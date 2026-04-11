@@ -118,7 +118,7 @@
 
         <!-- 每日行程:可折叠 -->
         <a-card title="📅 每日行程" :bordered="false" class="days-card">
-          <a-collapse v-model:activeKey="activeDays" accordion>
+          <a-collapse v-model:activeKey="activeDays">
             <a-collapse-panel
               v-for="(day, index) in tripPlan.days"
               :key="index"
@@ -434,131 +434,145 @@ const handleImageError = (event: Event) => {
 
 
 
+// 占位图片生成函数
+const generatePlaceholderImage = (text: string, bgColor: string = '#e8e8e8', textColor: string = '#999'): string => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+      <rect width="400" height="300" fill="${bgColor}"/>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="${textColor}">${text}</text>
+    </svg>
+  `
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
+// 替换跨域图片为占位图
+const replaceCrossOriginImages = (container: HTMLElement) => {
+  const images = container.querySelectorAll('img')
+  images.forEach((img) => {
+    if (img.src && img.src.startsWith('http') && img.src.includes('autonavi.com')) {
+      img.src = generatePlaceholderImage('图片暂时无法加载', '#f5f7fa', '#999')
+    }
+  })
+}
+
 // 导出为图片
 const exportAsImage = async () => {
   try {
     message.loading({ content: '正在生成图片...', key: 'export', duration: 0 })
+
+    // 备份原始状态
+    const originalActiveDays = [...activeDays.value]
+
+    // 展开所有日期
+    if (tripPlan.value) {
+      activeDays.value = tripPlan.value.days.map((_, index) => index)
+    }
+
+    // 等待 Vue 渲染完成
+    await new Promise((resolve) => setTimeout(resolve, 800))
 
     const element = document.querySelector('.main-content') as HTMLElement
     if (!element) {
       throw new Error('未找到内容元素')
     }
 
-    // 创建一个独立的容器
-    const exportContainer = document.createElement('div')
-    exportContainer.style.width = element.offsetWidth + 'px'
-    exportContainer.style.backgroundColor = '#f5f7fa'
-    exportContainer.style.padding = '20px'
+    // 深拷贝内容
+    const clone = element.cloneNode(true) as HTMLElement
 
-    // 复制所有内容
-    exportContainer.innerHTML = element.innerHTML
+    // 替换跨域图片
+    replaceCrossOriginImages(clone)
 
     // 处理地图截图
-    const mapContainer = document.getElementById('amap-container')
+    const mapContainer = clone.querySelector('#amap-container')
     if (mapContainer && map) {
       const mapCanvas = mapContainer.querySelector('canvas')
       if (mapCanvas) {
         const mapSnapshot = mapCanvas.toDataURL('image/png')
-        const exportMapContainer = exportContainer.querySelector('#amap-container')
-        if (exportMapContainer) {
-          exportMapContainer.innerHTML = `<img src="${mapSnapshot}" style="width:100%;height:100%;object-fit:cover;" />`
-        }
+        mapContainer.innerHTML = `<img src="${mapSnapshot}" style="width:100%;height:400px;object-fit:cover;" />`
       }
     }
 
-    // 移除所有ant-card类,替换为纯div
-    const cards = exportContainer.querySelectorAll('.ant-card')
-    cards.forEach((card) => {
-      const cardEl = card as HTMLElement
-      try {
-        cardEl.className = '' // 移除所有类
-        cardEl.style.setProperty('background-color', '#ffffff')
-        cardEl.style.setProperty('border-radius', '12px')
-        cardEl.style.setProperty('box-shadow', '0 4px 12px rgba(0, 0, 0, 0.1)')
-        cardEl.style.setProperty('margin-bottom', '20px')
-        cardEl.style.setProperty('overflow', 'hidden')
-      } catch (err) {
-        console.error('设置卡片样式失败:', err)
+    // 应用样式
+    const applyStyles = (container: HTMLElement) => {
+      const cards = container.querySelectorAll('.ant-card')
+      cards.forEach((card) => {
+        const cardEl = card as HTMLElement
+        cardEl.style.backgroundColor = '#ffffff'
+        cardEl.style.borderRadius = '12px'
+        cardEl.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+        cardEl.style.marginBottom = '20px'
+        cardEl.style.overflow = 'hidden'
+      })
+
+      const cardHeads = container.querySelectorAll('.ant-card-head')
+      cardHeads.forEach((head) => {
+        const headEl = head as HTMLElement
+        headEl.style.backgroundColor = '#667eea'
+        headEl.style.color = '#ffffff'
+        headEl.style.padding = '16px 24px'
+        headEl.style.fontSize = '18px'
+        headEl.style.fontWeight = '600'
+      })
+
+      const cardBodies = container.querySelectorAll('.ant-card-body')
+      cardBodies.forEach((body) => {
+        const bodyEl = body as HTMLElement
+        bodyEl.style.backgroundColor = '#ffffff'
+        bodyEl.style.padding = '24px'
+      })
+
+      const budgetTotal = container.querySelector('.budget-total')
+      if (budgetTotal) {
+        const el = budgetTotal as HTMLElement
+        el.style.backgroundColor = '#667eea'
+        el.style.color = '#ffffff'
+        el.style.padding = '20px'
+        el.style.borderRadius = '12px'
+        el.style.marginBottom = '20px'
       }
-    })
 
-    // 处理卡片头部
-    const cardHeads = exportContainer.querySelectorAll('.ant-card-head')
-    cardHeads.forEach((head) => {
-      const headEl = head as HTMLElement
-      try {
-        headEl.style.setProperty('background-color', '#667eea')
-        headEl.style.setProperty('color', '#ffffff')
-        headEl.style.setProperty('padding', '16px 24px')
-        headEl.style.setProperty('font-size', '18px')
-        headEl.style.setProperty('font-weight', '600')
-      } catch (err) {
-        console.error('设置卡片头部样式失败:', err)
-      }
-    })
-
-    // 处理卡片内容
-    const cardBodies = exportContainer.querySelectorAll('.ant-card-body')
-    cardBodies.forEach((body) => {
-      const bodyEl = body as HTMLElement
-      bodyEl.style.setProperty('background-color', '#ffffff')
-      bodyEl.style.setProperty('padding', '24px')
-    })
-
-    // 处理酒店卡片头部
-    const hotelCards = exportContainer.querySelectorAll('.hotel-card')
-    hotelCards.forEach((card) => {
-      const head = card.querySelector('.ant-card-head') as HTMLElement
-      if (head) {
-        head.style.setProperty('background-color', '#1976d2')
-      }
-      (card as HTMLElement).style.setProperty('background-color', '#e3f2fd')
-    })
-
-    // 处理天气卡片
-    const weatherCards = exportContainer.querySelectorAll('.weather-card')
-    weatherCards.forEach((card) => {
-      (card as HTMLElement).style.setProperty('background-color', '#e0f7fa')
-    })
-
-    // 处理预算总计
-    const budgetTotal = exportContainer.querySelector('.budget-total')
-    if (budgetTotal) {
-      const el = budgetTotal as HTMLElement
-      el.style.setProperty('background-color', '#667eea')
-      el.style.setProperty('color', '#ffffff')
-      el.style.setProperty('padding', '20px')
-      el.style.setProperty('border-radius', '12px')
-      el.style.setProperty('margin-bottom', '20px')
+      const budgetItems = container.querySelectorAll('.budget-item')
+      budgetItems.forEach((item) => {
+        const el = item as HTMLElement
+        el.style.backgroundColor = '#f5f7fa'
+        el.style.padding = '16px'
+        el.style.borderRadius = '8px'
+        el.style.marginBottom = '12px'
+      })
     }
 
-    // 处理预算项
-    const budgetItems = exportContainer.querySelectorAll('.budget-item')
-    budgetItems.forEach((item) => {
-      const el = item as HTMLElement
-      el.style.setProperty('background-color', '#f5f7fa')
-      el.style.setProperty('padding', '16px')
-      el.style.setProperty('border-radius', '8px')
-      el.style.setProperty('margin-bottom', '12px')
-    })
+    applyStyles(clone)
 
-    // 添加到body(隐藏)
+    // 创建导出容器
+    const exportContainer = document.createElement('div')
+    exportContainer.style.width = element.offsetWidth + 'px'
+    exportContainer.style.backgroundColor = '#f5f7fa'
+    exportContainer.style.padding = '20px'
     exportContainer.style.position = 'absolute'
+    exportContainer.style.top = '0'
     exportContainer.style.left = '-9999px'
+    exportContainer.appendChild(clone)
     document.body.appendChild(exportContainer)
+
+    // 等待渲染完成
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
     const canvas = await html2canvas(exportContainer, {
       backgroundColor: '#f5f7fa',
       scale: 2,
       logging: false,
       useCORS: true,
-      allowTaint: true
+      allowTaint: true,
+      imageTimeout: 0,
+      height: exportContainer.scrollHeight,
+      windowHeight: exportContainer.scrollHeight
     })
 
-    // 移除容器
     document.body.removeChild(exportContainer)
 
-    // 转换为图片并下载
+    // 恢复原始状态
+    activeDays.value = originalActiveDays
+
     const link = document.createElement('a')
     link.download = `旅行计划_${tripPlan.value?.city}_${new Date().getTime()}.png`
     link.href = canvas.toDataURL('image/png')
@@ -576,124 +590,113 @@ const exportAsPDF = async () => {
   try {
     message.loading({ content: '正在生成PDF...', key: 'export', duration: 0 })
 
+    // 备份原始状态
+    const originalActiveDays = [...activeDays.value]
+
+    // 展开所有日期
+    if (tripPlan.value) {
+      activeDays.value = tripPlan.value.days.map((_, index) => index)
+    }
+
+    // 等待 Vue 渲染完成
+    await new Promise((resolve) => setTimeout(resolve, 800))
+
     const element = document.querySelector('.main-content') as HTMLElement
     if (!element) {
       throw new Error('未找到内容元素')
     }
 
-    // 创建一个独立的容器
-    const exportContainer = document.createElement('div')
-    exportContainer.style.width = element.offsetWidth + 'px'
-    exportContainer.style.backgroundColor = '#f5f7fa'
-    exportContainer.style.padding = '20px'
+    // 深拷贝内容
+    const clone = element.cloneNode(true) as HTMLElement
 
-    // 复制所有内容
-    exportContainer.innerHTML = element.innerHTML
+    // 替换跨域图片
+    replaceCrossOriginImages(clone)
 
     // 处理地图截图
-    const mapContainer = document.getElementById('amap-container')
+    const mapContainer = clone.querySelector('#amap-container')
     if (mapContainer && map) {
       const mapCanvas = mapContainer.querySelector('canvas')
       if (mapCanvas) {
         const mapSnapshot = mapCanvas.toDataURL('image/png')
-        const exportMapContainer = exportContainer.querySelector('#amap-container')
-        if (exportMapContainer) {
-          exportMapContainer.innerHTML = `<img src="${mapSnapshot}" style="width:100%;height:100%;object-fit:cover;" />`
-        }
+        mapContainer.innerHTML = `<img src="${mapSnapshot}" style="width:100%;height:400px;object-fit:cover;" />`
       }
     }
 
-    // 移除所有ant-card类,替换为纯div
-    const cards = exportContainer.querySelectorAll('.ant-card')
+    // 应用样式
+    const cards = clone.querySelectorAll('.ant-card')
     cards.forEach((card) => {
       const cardEl = card as HTMLElement
-      try {
-        cardEl.className = ''
-        cardEl.style.setProperty('background-color', '#ffffff')
-        cardEl.style.setProperty('border-radius', '12px')
-        cardEl.style.setProperty('box-shadow', '0 4px 12px rgba(0, 0, 0, 0.1)')
-        cardEl.style.setProperty('margin-bottom', '20px')
-        cardEl.style.setProperty('overflow', 'hidden')
-      } catch (err) {
-        console.error('设置卡片样式失败:', err)
-      }
+      cardEl.style.backgroundColor = '#ffffff'
+      cardEl.style.borderRadius = '12px'
+      cardEl.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+      cardEl.style.marginBottom = '20px'
+      cardEl.style.overflow = 'hidden'
     })
 
-    // 处理卡片头部
-    const cardHeads = exportContainer.querySelectorAll('.ant-card-head')
+    const cardHeads = clone.querySelectorAll('.ant-card-head')
     cardHeads.forEach((head) => {
       const headEl = head as HTMLElement
-      try {
-        headEl.style.setProperty('background-color', '#667eea')
-        headEl.style.setProperty('color', '#ffffff')
-        headEl.style.setProperty('padding', '16px 24px')
-        headEl.style.setProperty('font-size', '18px')
-        headEl.style.setProperty('font-weight', '600')
-      } catch (err) {
-        console.error('设置卡片头部样式失败:', err)
-      }
+      headEl.style.backgroundColor = '#667eea'
+      headEl.style.color = '#ffffff'
+      headEl.style.padding = '16px 24px'
+      headEl.style.fontSize = '18px'
+      headEl.style.fontWeight = '600'
     })
 
-    // 处理卡片内容
-    const cardBodies = exportContainer.querySelectorAll('.ant-card-body')
+    const cardBodies = clone.querySelectorAll('.ant-card-body')
     cardBodies.forEach((body) => {
       const bodyEl = body as HTMLElement
-      bodyEl.style.setProperty('background-color', '#ffffff')
-      bodyEl.style.setProperty('padding', '24px')
+      bodyEl.style.backgroundColor = '#ffffff'
+      bodyEl.style.padding = '24px'
     })
 
-    // 处理酒店卡片头部
-    const hotelCards = exportContainer.querySelectorAll('.hotel-card')
-    hotelCards.forEach((card) => {
-      const head = card.querySelector('.ant-card-head') as HTMLElement
-      if (head) {
-        head.style.setProperty('background-color', '#1976d2')
-      }
-      (card as HTMLElement).style.setProperty('background-color', '#e3f2fd')
-    })
-
-    // 处理天气卡片
-    const weatherCards = exportContainer.querySelectorAll('.weather-card')
-    weatherCards.forEach((card) => {
-      (card as HTMLElement).style.setProperty('background-color', '#e0f7fa')
-    })
-
-    // 处理预算总计
-    const budgetTotal = exportContainer.querySelector('.budget-total')
+    const budgetTotal = clone.querySelector('.budget-total')
     if (budgetTotal) {
       const el = budgetTotal as HTMLElement
-      el.style.setProperty('background-color', '#667eea')
-      el.style.setProperty('color', '#ffffff')
-      el.style.setProperty('padding', '20px')
-      el.style.setProperty('border-radius', '12px')
-      el.style.setProperty('margin-bottom', '20px')
+      el.style.backgroundColor = '#667eea'
+      el.style.color = '#ffffff'
+      el.style.padding = '20px'
+      el.style.borderRadius = '12px'
+      el.style.marginBottom = '20px'
     }
 
-    // 处理预算项
-    const budgetItems = exportContainer.querySelectorAll('.budget-item')
+    const budgetItems = clone.querySelectorAll('.budget-item')
     budgetItems.forEach((item) => {
       const el = item as HTMLElement
-      el.style.setProperty('background-color', '#f5f7fa')
-      el.style.setProperty('padding', '16px')
-      el.style.setProperty('border-radius', '8px')
-      el.style.setProperty('margin-bottom', '12px')
+      el.style.backgroundColor = '#f5f7fa'
+      el.style.padding = '16px'
+      el.style.borderRadius = '8px'
+      el.style.marginBottom = '12px'
     })
 
-    // 添加到body(隐藏)
+    // 创建导出容器
+    const exportContainer = document.createElement('div')
+    exportContainer.style.width = element.offsetWidth + 'px'
+    exportContainer.style.backgroundColor = '#f5f7fa'
+    exportContainer.style.padding = '20px'
     exportContainer.style.position = 'absolute'
+    exportContainer.style.top = '0'
     exportContainer.style.left = '-9999px'
+    exportContainer.appendChild(clone)
     document.body.appendChild(exportContainer)
+
+    await new Promise((resolve) => setTimeout(resolve, 300))
 
     const canvas = await html2canvas(exportContainer, {
       backgroundColor: '#f5f7fa',
       scale: 2,
       logging: false,
       useCORS: true,
-      allowTaint: true
+      allowTaint: true,
+      imageTimeout: 0,
+      height: exportContainer.scrollHeight,
+      windowHeight: exportContainer.scrollHeight
     })
 
-    // 移除容器
     document.body.removeChild(exportContainer)
+
+    // 恢复原始状态
+    activeDays.value = originalActiveDays
 
     const imgData = canvas.toDataURL('image/png')
     const pdf = new jsPDF({
@@ -705,18 +708,19 @@ const exportAsPDF = async () => {
     const imgWidth = 210 // A4宽度(mm)
     const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-    // 如果内容高度超过一页,分页处理
+    // 分页处理
+    const pageHeight = 297 // A4高度(mm)
     let heightLeft = imgHeight
     let position = 0
 
     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-    heightLeft -= 297 // A4高度
+    heightLeft -= pageHeight
 
     while (heightLeft > 0) {
       position = heightLeft - imgHeight
       pdf.addPage()
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= 297
+      heightLeft -= pageHeight
     }
 
     pdf.save(`旅行计划_${tripPlan.value?.city}_${new Date().getTime()}.pdf`)

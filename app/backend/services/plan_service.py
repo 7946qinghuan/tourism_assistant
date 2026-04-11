@@ -54,25 +54,38 @@ class PlanTripService:
     @staticmethod
     def _parse_json_from_llm_response(response_content: str) -> dict | None:
         """
-        Parses a JSON string from an LLM response that is typically formatted as:
+        Parses a JSON string from an LLM response that may be formatted as:
         ```json
         {...}
         ```
+        or as bare JSON without markdown wrappers.
         """
         try:
+            # Try to extract JSON from markdown code block first
             start_delimiter = "```json"
-            end_delimiter = "```"
             start_index = response_content.find(start_delimiter)
-            end_index = response_content.rfind(end_delimiter)
+            if start_index != -1:
+                end_index = response_content.rfind("```")
+                if end_index != -1 and start_index < end_index:
+                    json_str = response_content[
+                        start_index + len(start_delimiter) : end_index
+                    ].strip()
+                    return json.loads(json_str)
 
-            if start_index == -1 or end_index == -1 or start_index >= end_index:
-                logger.warning("JSON start or end delimiters not found in response.")
-                return None
+            # Fallback: try to parse the entire content as JSON
+            # Strip whitespace and common markdown artifacts
+            stripped = response_content.strip()
+            # Remove leading markdown code fence if present
+            if stripped.startswith("```"):
+                # Find the end of the first line (after the fence)
+                first_newline = stripped.find("\n")
+                if first_newline != -1:
+                    stripped = stripped[first_newline + 1 :]
+                # Remove trailing fence
+                if stripped.rstrip().endswith("```"):
+                    stripped = stripped[: stripped.rstrip().rfind("```")].strip()
 
-            json_str = response_content[
-                start_index + len(start_delimiter) : end_index
-            ].strip()
-            return json.loads(json_str)
+            return json.loads(stripped)
         except json.JSONDecodeError as e:
             logger.error(f"Failed to decode JSON from response: {e}")
             return None

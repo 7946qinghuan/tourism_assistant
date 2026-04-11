@@ -27,9 +27,8 @@ ATTRACTION_AGENT_PROMPT = """
       "id": "test_attattraction_1",
       "name": "test_attraction_1",
       "address": "test_address_1",
-      "photo_url": "http://test_photo_url_1"
-    ,
-    "typecode": "test_typecode_1"
+      "photo_url": "http://test_photo_url_1",
+      "typecode": "test_typecode_1"
     },
     {
       "id": "test_attraction_2",

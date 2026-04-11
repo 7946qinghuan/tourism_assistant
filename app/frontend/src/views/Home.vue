@@ -58,6 +58,7 @@
                   size="large"
                   class="custom-input"
                   placeholder="选择日期"
+                  :disabledDate="disabledStartDate"
                 />
               </a-form-item>
             </a-col>
@@ -72,6 +73,7 @@
                   size="large"
                   class="custom-input"
                   placeholder="选择日期"
+                  :disabledDate="disabledEndDate"
                 />
               </a-form-item>
             </a-col>
@@ -205,6 +207,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
+import dayjs from 'dayjs'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { generateTripPlan } from '@/services/api'
@@ -242,6 +245,19 @@ watch([() => formData.start_date, () => formData.end_date], ([start, end]) => {
     }
   }
 })
+
+// 禁用今日之前的日期
+const disabledStartDate = (current: dayjs.Dayjs) => {
+  return current && current < dayjs().startOf('day')
+}
+
+// 禁用开始日期之前及今日之前的日期
+const disabledEndDate = (current: dayjs.Dayjs) => {
+  if (!formData.start_date) {
+    return current && current < dayjs().startOf('day')
+  }
+  return current && current < dayjs(formData.start_date).startOf('day')
+}
 
 const handleSubmit = async () => {
   if (!formData.start_date || !formData.end_date) {

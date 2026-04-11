@@ -17,7 +17,13 @@ class Settings:
 
     # 使用 field 和 default_factory 来处理可变对象
     llm_model_config_dict: dict = field(
-        default_factory=lambda: {"temperature": 0.1, "stream": False}
+        default_factory=lambda: {
+            "temperature": 0.1,
+            "stream": False,
+            "extra_body": {
+                "chat_template_kwargs": {"enable_thinking": False},
+            },
+        }
     )
 
     amap_mcp_tool_config_path: str | None = os.getenv("AMAP_MCP_TOOL_CONFIG_PATH")
